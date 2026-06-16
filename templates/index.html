@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cyber Threat Intelligence Dashboard</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { background-color: #0b0f19; color: #e2e8f0; }
+        .glass-card { background: rgba(17, 24, 39, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.05); }
+    </style>
+</head>
+<body class="font-sans antialiased">
+
+    <!-- Top Navigation -->
+    <nav class="border-b border-slate-800 bg-slate-900/50 px-6 py-4 backdrop-blur-md">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-red-500/10 text-red-500 border border-red-500/20 animate-pulse">
+                    <i class="fa-solid fa-shield-halved text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-wide text-white">ShadowNet</h1>
+                    <p class="text-xs text-slate-400">SSH Honeypot Threat Intel</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-4">
+                <span class="flex items-center text-xs bg-emerald-500/10 text-emerald-400 px-3 py-1 rounded-full border border-emerald-500/20">
+                    <span class="h-2 w-2 bg-emerald-400 rounded-full mr-2 animate-ping"></span>
+                    Honeypot Active
+                </span>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto p-4 lg:p-8 space-y-8">
+        
+        <!-- Metrics Row -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="glass-card p-6 rounded-xl flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-slate-400 font-medium">Total Detected Attacks</p>
+                    <h3 class="text-3xl font-extrabold text-white mt-2">{{ total }}</h3>
+                </div>
+                <div class="h-12 w-12 rounded-lg bg-red-500/10 flex items-center justify-center text-red-400 border border-red-500/20">
+                    <i class="fa-solid fa-skull-crossbones text-2xl"></i>
+                </div>
+            </div>
+            
+            <div class="glass-card p-6 rounded-xl flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-slate-400 font-medium">Active Services</p>
+                    <h3 class="text-3xl font-extrabold text-blue-400 mt-2">1</h3>
+                </div>
+                <div class="h-12 w-12 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-400 border border-blue-500/20">
+                    <i class="fa-solid fa-server text-2xl"></i>
+                </div>
+            </div>
+
+            <div class="glass-card p-6 rounded-xl flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-slate-400 font-medium">Database Status</p>
+                    <h3 class="text-3xl font-extrabold text-emerald-400 mt-2">Online</h3>
+                </div>
+                <div class="h-12 w-12 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400 border border-emerald-500/20">
+                    <i class="fa-solid fa-database text-2xl"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts and Analytics Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Analytics Chart -->
+            <div class="glass-card p-6 rounded-xl lg:col-span-1 flex flex-col justify-between">
+                <div>
+                    <h4 class="text-lg font-semibold text-white mb-2"><i class="fa-solid fa-key mr-2 text-yellow-500"></i>Top Targeted Passwords</h4>
+                    <p class="text-xs text-slate-400 mb-4">Most common password attempts grouped by frequency.</p>
+                </div>
+                <div class="relative min-h-[250px] flex items-center justify-center">
+                    <canvas id="passwordChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Real-time Feed Tables -->
+            <div class="glass-card p-6 rounded-xl lg:col-span-2 overflow-hidden flex flex-col">
+                <h4 class="text-lg font-semibold text-white mb-4"><i class="fa-solid fa-list-timeline mr-2 text-indigo-500"></i>Recent Attack Logs</h4>
+                <div class="overflow-x-auto rounded-lg border border-slate-800 custom-scrollbar max-h-[320px]">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-900/80 text-slate-300 text-xs font-semibold uppercase tracking-wider border-b border-slate-800">
+                                <th class="p-4">Timestamp</th>
+                                <th class="p-4">Attacker IP</th>
+                                <th class="p-4">Credentials</th>
+                                <th class="p-4">Location</th>
+                                <th class="p-4">MITRE Technique</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-800/50 text-sm text-slate-300">
+                            {% for attack in attacks %}
+                            <tr class="hover:bg-slate-800/30 transition-colors">
+                                <td class="p-4 font-mono text-xs text-slate-400 whitespace-nowrap">{{ attack[3] }}</td>
+                                <td class="p-4 font-mono text-red-400 font-medium">{{ attack[0] }}</td>
+                                <td class="p-4">
+                                    <div class="text-xs">
+                                        <span class="text-slate-500">U:</span> <span class="text-slate-200 font-mono">{{ attack[1] }}</span><br>
+                                        <span class="text-slate-500">P:</span> <span class="text-yellow-500/90 font-mono">{{ attack[2] }}</span>
+                                    </div>
+                                </td>
+                                <td class="p-4 text-xs">
+                                    <i class="fa-solid fa-location-dot text-slate-500 mr-1"></i>{{ attack[5] }}, <span class="text-slate-400">{{ attack[6] }}</span>
+                                </td>
+                                <td class="p-4">
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-500/10 text-red-400 border border-red-500/20">
+                                        {{ attack[4] }}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart Logic Injection -->
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const ctx = document.getElementById('passwordChart').getContext('2d');
+            const labels = {{ labels | safe }};
+            const values = {{ values | safe }};
+
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: values,
+                        backgroundColor: [
+                            'rgba(239, 68, 68, 0.7)',
+                            'rgba(245, 158, 11, 0.7)',
+                            'rgba(59, 130, 246, 0.7)',
+                            'rgba(168, 85, 247, 0.7)',
+                            'rgba(16, 185, 129, 0.7)'
+                        ],
+                        borderColor: '#111827',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { color: '#94a3b8', boxWidth: 12, font: { size: 11 } }
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>
